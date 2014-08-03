@@ -23,10 +23,17 @@ shn_xajax_registerFunction('gis_create_new');
 shn_xajax_registerFunction('gis_save_map');
 shn_xajax_registerFunction('gis_update_map');
 shn_xajax_registerFunction('gis_delete_map');
+
 shn_xajax_registerFunction('gis_add_layer');
+shn_xajax_registerFunction('gis_rename_layer');
 shn_xajax_registerFunction('gis_get_layer_data');
 shn_xajax_registerFunction('gis_get_Vector_layer_data');
+
+shn_xajax_registerFunction('gis_create_tile_layer');
+shn_xajax_registerFunction('gis_create_image_layer');
 shn_xajax_registerFunction('gis_create_vector_layer');
+
+shn_xajax_registerFunction('gis_Tile_layer_options');
 shn_xajax_registerFunction('gis_vector_layer_options');
 shn_xajax_registerFunction('gis_image_layer_options');
 shn_xajax_registerFunction('gis_add_property');

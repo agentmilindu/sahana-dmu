@@ -21,12 +21,20 @@ array_push($global['xajax_functions'],'gis_create_new');
 array_push($global['xajax_functions'],'gis_save_map');
 array_push($global['xajax_functions'],'gis_update_map');
 array_push($global['xajax_functions'],'gis_delete_map');
+
 array_push($global['xajax_functions'],'gis_add_layer');
+array_push($global['xajax_functions'],'gis_rename_layer');
 array_push($global['xajax_functions'],'gis_get_layer_data');
 array_push($global['xajax_functions'],'gis_get_Vector_layer_data');
+
+array_push($global['xajax_functions'],'gis_create_tile_layer');
+array_push($global['xajax_functions'],'gis_create_image_layer');
 array_push($global['xajax_functions'],'gis_create_vector_layer');
+
+array_push($global['xajax_functions'],'gis_Tile_layer_options');
 array_push($global['xajax_functions'],'gis_vector_layer_options');
 array_push($global['xajax_functions'],'gis_image_layer_options');
+
 array_push($global['xajax_functions'],'gis_add_property');
 
 
@@ -67,6 +75,35 @@ function gis_add_layer() {
 	$global['xajax_res']->addAssign('add-layer','innerHTML',$output);
 	$global['xajax_res']->addScript("");
 	return $global['xajax_res']->getXML();
+}
+function gis_rename_layer() {
+	global $global;
+	$output = '<table class="emTable" id="add-layer-options"><tbody> <tr> <td class="mainRowEven"><b style="line-height: 28px;">Add layer</b> <input type="button" style="float: right; margin-left:3px;" class="styleTehButton" onclick="cancle_add_layer();" value="Cancel"><input type="button" style="float: right;" class="styleTehButton" onclick="save_layer();" value="Save"></td></tr>
+<tr><td>Name: <input type="text" id="name"/> </td></tr><tr><td>Type: <label for="Tile" > <input type="radio" name="layer-type" value="Tile" id="Tile" onclick="showAddTileLayerOptions()"/> Tile Layer</label><label for="Vector"> <input type="radio" name="layer-type" value="Vector" id="Vector" onclick="showAddVectorLayerOptions()"/> Vector Layer</label> <input type="radio" name="layer-type" value="Image" id="Image" onclick="showAddImageLayerOptions()"/> Image Layer</label><div id="layer-options"></div></td></tr><tr><td></td></tr></tbody></table>';
+	$global['xajax_res']->addAssign('add-layer','innerHTML',$output);
+	$global['xajax_res']->addScript("");
+	return $global['xajax_res']->getXML();
+}
+function gis_create_tile_layer($map_id, $name, $tileService, $options){
+global $global;
+	$q = "
+		INSERT INTO layer (name, type, options)
+		VALUES ('$name','0','$options');
+	";
+	$result = $global['db']->Execute($q);
+	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserting layer"); }
+	$layer_id = $global['db'] -> Insert_ID();
+	//daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserted layer ");
+	$q = "
+		INSERT INTO map_has_layer (map_map_id, layer_layer_id, owner)
+		VALUES ($map_id,$layer_id,1);
+	";
+	$result = $global['db']->Execute($q);
+	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserting map_has_layer"); }
+	
+	$global['xajax_res']->addScript("add_tile_layer($options)");
+	return $global['xajax_res']->getXML();
+
 }
 function gis_create_vector_layer($map_id, $name, $options, $GeoJSONString) {
 	global $global;
@@ -184,8 +221,9 @@ function gis_create_vector_layer($map_id, $name, $options, $GeoJSONString) {
                 
 	}
 	//$global['xajax_res']->addAppend('rezLog','innerHTML',$message);
-	$global['xajax_res']->addScript("alert(".$layer_id.")");
-	return $global['xajax_res']->getXML();
+	//$global['xajax_res']->addScript("alert(".$layer_id.")");
+	//return $global['xajax_res']->getXML();
+	gis_get_Vector_layer_data($name, $layer_id);
 }
 function gis_get_layer_data($map_id) {
 	global $global;
@@ -219,7 +257,7 @@ function gis_get_layer_data($map_id) {
 	return $global['xajax_res']->getXML();
 }
 
-function gis_get_Vector_layer_data($layer_id) {
+function gis_get_Vector_layer_data($name, $layer_id) {
 	global $global;
 	
 	$q = "
@@ -330,10 +368,20 @@ function gis_get_Vector_layer_data($layer_id) {
 		);
 	}
 	
-	$global['xajax_res']->addScript("add_vector_layer(".json_encode($layer).")");
+	$global['xajax_res']->addScript("add_vector_layer($layer_id,'$name', ".json_encode($layer).")");
 	return $global['xajax_res']->getXML();
 }
 
+function gis_Tile_layer_options(){
+	global $global;
+	$output = '<select onchange="" id="tile-service">
+  <option value="osm">OpenStreetMap</option>
+  <option value="bing">Bing</option>
+  <option value="google">Google</option>
+</select><div id="tile-options"></div>';
+	$global['xajax_res']->addAssign('layer-options','innerHTML',$output);
+	return $global['xajax_res']->getXML();
+}
 function gis_vector_layer_options(){
 	global $global;
 	$output = '<br/>GeoJSON:<br/><textarea id="GeoJSON-data" style="width: 95%;"></textarea>';
