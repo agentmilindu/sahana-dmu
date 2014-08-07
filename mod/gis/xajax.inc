@@ -24,6 +24,7 @@ array_push($global['xajax_functions'],'gis_delete_map');
 
 array_push($global['xajax_functions'],'gis_add_layer');
 array_push($global['xajax_functions'],'gis_rename_layer');
+array_push($global['xajax_functions'],'gis_delete_layer');
 array_push($global['xajax_functions'],'gis_get_layer_data');
 array_push($global['xajax_functions'],'gis_get_Vector_layer_data');
 
@@ -36,6 +37,8 @@ array_push($global['xajax_functions'],'gis_vector_layer_options');
 array_push($global['xajax_functions'],'gis_image_layer_options');
 
 array_push($global['xajax_functions'],'gis_add_property');
+array_push($global['xajax_functions'],'gis_update_property');
+array_push($global['xajax_functions'],'gis_delete_proporty');
 
 
 
@@ -76,14 +79,29 @@ function gis_add_layer() {
 	$global['xajax_res']->addScript("");
 	return $global['xajax_res']->getXML();
 }
-function gis_rename_layer() {
+function gis_rename_layer($id, $newName) {
 	global $global;
-	$output = '<table class="emTable" id="add-layer-options"><tbody> <tr> <td class="mainRowEven"><b style="line-height: 28px;">Add layer</b> <input type="button" style="float: right; margin-left:3px;" class="styleTehButton" onclick="cancle_add_layer();" value="Cancel"><input type="button" style="float: right;" class="styleTehButton" onclick="save_layer();" value="Save"></td></tr>
-<tr><td>Name: <input type="text" id="name"/> </td></tr><tr><td>Type: <label for="Tile" > <input type="radio" name="layer-type" value="Tile" id="Tile" onclick="showAddTileLayerOptions()"/> Tile Layer</label><label for="Vector"> <input type="radio" name="layer-type" value="Vector" id="Vector" onclick="showAddVectorLayerOptions()"/> Vector Layer</label> <input type="radio" name="layer-type" value="Image" id="Image" onclick="showAddImageLayerOptions()"/> Image Layer</label><div id="layer-options"></div></td></tr><tr><td></td></tr></tbody></table>';
-	$global['xajax_res']->addAssign('add-layer','innerHTML',$output);
-	$global['xajax_res']->addScript("");
+	$q = "
+		UPDATE layer SET name='$newName' WHERE layer_id=$id;
+	";
+	$result = $global['db']->Execute($q);
+	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserting map"); }
+	
+	$global['xajax_res']->addScript("$('#add-layer').html('');$('#layers tr#$id .name').html('$newName');");
 	return $global['xajax_res']->getXML();
 }
+function gis_delete_layer($id) {
+	global $global;
+	$q = "
+		DELETE FROM map_has_layer WHERE layer_layer_id=$id;
+	";
+	$result = $global['db']->Execute($q);
+	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Delete map_has_layer"); }
+	
+	$global['xajax_res']->addScript("$('#layers tr#$id').html('');");
+	return $global['xajax_res']->getXML();
+}
+
 function gis_create_tile_layer($map_id, $name, $tileService, $options){
 global $global;
 	$q = "
@@ -100,8 +118,7 @@ global $global;
 	";
 	$result = $global['db']->Execute($q);
 	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserting map_has_layer"); }
-	
-	$global['xajax_res']->addScript("add_tile_layer($options)");
+	$global['xajax_res']->addScript("add_tile_layer($layer_id, '$name', ' $options ');$('#add-layer-options').remove()");
 	return $global['xajax_res']->getXML();
 
 }
@@ -411,10 +428,32 @@ function gis_add_property($feature_id, $name, $value){
 	";
 	$result = $global['db']->Execute($q);
 	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "INSERT a Property"); }
-			
-			
+				
 			
 	$global['xajax_res']->addScript("update_feature_property($feature_id, '".$name."', '".$value."')");
+	return $global['xajax_res']->getXML();
+}
+function gis_update_property($feature_id, $oldName, $oldValue, $name, $value){
+	global $global;
+	
+	$q = "
+		UPDATE property SET name='$name', value='$value' WHERE feature_feature_id=$feature_id AND name='$oldName' AND value='$oldValue';
+	";
+	$result = $global['db']->Execute($q);
+	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Update a Property"); }
+					
+	$global['xajax_res']->addScript("update_property_changes($feature_id, '".$oldName."', '".$oldValue."', '".$name."', '".$value."')");
+	return $global['xajax_res']->getXML();
+}
+function gis_delete_proporty($feature_id,  $name, $value){
+	global $global;
+	$q = "
+		DELETE FROM  property WHERE feature_feature_id=$feature_id AND name='$name' AND value='$value';
+	";
+	$result = $global['db']->Execute($q);
+	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Update a Property"); }
+					
+	$global['xajax_res']->addScript("delete_property_changes($feature_id, '".$name."', '".$value."')");
 	return $global['xajax_res']->getXML();
 }
 

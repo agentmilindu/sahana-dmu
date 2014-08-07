@@ -97,6 +97,8 @@ function init_layers( data ){
 	$(data).each(function(){
 
 		if(this.type == "0" ){
+			//this.options[id]=this.id;
+			x = this.options;
 			add_tile_layer(this.id, this.name, this.options );
 		}
 		else if(this.type == "1" ){
@@ -119,20 +121,21 @@ function add_layer(){
 function show_rename_layer(id){
 
 		$('#add-layer').html('<table class="emTable" id="rename-layer"> <tr> <td class="mainRowEven"><b style="line-height: 28px;">Rename Layer</b><input type="button" style="float: right;" class="styleTehButton" onclick="rename_layer('+id+', $(\'#rename-layer #name\').val());" value="Save"></td></tr><tr><td>New Name: <input type="text" id="name"/></td></tr></table>');
-
-	
-		
 }
 function rename_layer(id, newName){
 	if(app.map_id){
-		$('#add-layer').html('<p>Loading...</P>');
 		gis_rename_layer(id, newName);
 	}
 	else{
 		alert('Please, save the map before adding layers');
 	}
 }
-
+//Delete the layer
+function confirm_delete_layer( layer_id ){
+	if(confirm("Are you sure?")){
+		gis_delete_layer(layer_id)
+	}
+}
 
 //Save the layer 
 function save_layer(){
@@ -143,7 +146,7 @@ function save_layer(){
 			var layerName = $('#add-layer-options #name').val();
 			var options = '';
 			if(tileService = 'osm' ){
-			 options = '{ source: new ol.source.OSM() }';
+			 options = ' { source: new ol.source.OSM() }';
 			}
 			gis_create_tile_layer(app.map_id, layerName, tileService, options);
 		}else{
@@ -189,13 +192,16 @@ function add_vector_layer(id,  name, data ){
         projection: 'EPSG:3857'
      })
   });
-  		$('#layers').append("<tr> <td class='mainRow'><input type='checkbox' id='"+id+"' onclick='toggleVisibility("+id+")' checked/>"+name+" <span class='tools'> [ <a href='#' onclick='show_rename_layer("+id+")'>Rename </a> | <a href='#'>Delete</a> ] </span></td></tr>");
+  		$('#layers').append("<tr id='"+id+"'> <td class='mainRow'><input type='checkbox' id='"+id+"' onclick='toggleVisibility("+id+")' checked/><span class='name'>"+name+"</span>  <span class='tools'> [ <span onclick='show_rename_layer("+id+")'>Rename </span> | <span onclick='confirm_delete_layer("+id+")'> Delete</span> ] </span></td></tr>");
 olmap.addLayer(jsonLayer);
 }
 //function for adding a tile layer onto to the OL3 map
 function add_tile_layer(id,  name, data ){
-	var layer = new ol.layer.Tile(  eval("( "+data+")") );
-	$('#layers').append("<tr> <td class='mainRow'><input type='checkbox' id='"+id+"' onclick='toggleVisibility("+id+")' checked/>"+name+" <span class='tools'> [ <a href='#' onclick='show_rename_layer("+id+")'>Rename </a> | <a href='#'>Delete</a> ] </span></td></tr>");
+    var options = eval("( "+data+")");
+	options.id = parseInt(id);
+	xx = options;
+	var layer = new ol.layer.Tile(  options );
+	$('#layers').append("<tr id='"+id+"'> <td class='mainRow'><input type='checkbox' id='"+id+"' onclick='toggleVisibility("+id+")' checked/><span class='name'>"+name+"</span>  <span class='tools'> [ <span onclick='show_rename_layer("+id+")'>Rename </span> | <span onclick='confirm_delete_layer("+id+")'>Delete</span> ] </span></td></tr>");
 
 	olmap.addLayer( layer );
 }
@@ -218,10 +224,10 @@ function displayFeatureInfo(pixel) {
   var info = document.getElementById('properties-panel');
   if (feature) {
 	theFeature = feature;
-    info.innerHTML = '<table class="emTable" id="properties"> <tr> <td class="mainRowEven"><b style="line-height: 28px;">Properties</b><input type="button" style="float: right;" class="styleTehButton" onclick="show_add_property('+feature.getId()+');" value="Add Property"></td></tr></table>';
+    info.innerHTML = '<div id="add-property-panel"></div><table class="emTable" id="properties"> <tr> <td class="mainRowEven"><b style="line-height: 28px;">Properties</b><input type="button" style="float: right;" class="styleTehButton" onclick="show_add_property('+feature.getId()+');" value="Add Property"></td></tr></table>';
 	$(feature.getKeys()).each(function(key, element){
 		if( element != 'geometry'){
-			$('#properties').append('<tr><td>' + element + ' : ' + feature.get(element) + ' <span class="tools"> [ <a href="#" onclick="show_edit_property('+feature.getId()+', \'' + element + '\',  \'' + feature.get(element) + '\')">Edit</a> | <a href="#">Remove</a> ] </span></td></tr>');
+			$('#properties').append('<tr><td><span id="property-name">' + element + '</span> : <span id="property-value">' + feature.get(element) + '</span> <span class="tools"> [ <span onclick="show_edit_property('+feature.getId()+', \'' + element + '\',  \'' + feature.get(element) + '\')">Edit</span> | <span onclick="confirm_delete_property('+feature.getId()+', \'' + element + '\',  \'' +  feature.get(element)+ '\')">Remove</span> ] </span></td></tr>');
 		}
 	});
   } else {
@@ -256,28 +262,63 @@ function showAddImageLayerOptions(){
 //property
 
 function show_add_property(featureId){
-	$('#properties-panel').prepend('<table class="emTable" id="add-property"> <tbody><tr> <td class="mainRowEven"><b style="line-height: 28px;">New Property</b><input type="button" style="float: right;margin-left:3px;" class="styleTehButton" onclick="$(\'#add-property\').html(\'\')" value="Cancle"><input type="button" style="float: right;" class="styleTehButton" onclick="save_property('+featureId+');" value="Save Property"></td></tr><tr><td>name : <input type="text" name="name"/> </td></tr><tr><td>Value : <input type="text" name="value"/> </td></tr></tbody></table>');
+	$('#properties-panel #add-property-panel').html('<table class="emTable" id="add-property"> <tbody><tr> <td class="mainRowEven"><b style="line-height: 28px;">New Property</b><input type="button" style="float: right;margin-left:3px;" class="styleTehButton" onclick="$(\'#add-property\').html(\'\')" value="Cancle"><input type="button" style="float: right;" class="styleTehButton" onclick="save_property('+featureId+');" value="Save Property"></td></tr><tr><td>name : <input type="text" name="name"/> </td></tr><tr><td>Value : <input type="text" name="value"/> </td></tr></tbody></table>');
 }
 function save_property(featureId){
 	gis_add_property(featureId, $('#add-property [name=name]').val(), $('#add-property [name=value]').val());
 }
-function update_property(featureId){
-	gis_update_property(featureId, $('#edit-property [name=name]').val(), $('#edit-property [name=value]').val());
+function update_property(featureId, oldName, oldValue){
+	gis_update_property(featureId, oldName, oldValue, $('#add-property [name=name]').val(), $('#add-property [name=value]').val());
 }
-function update_feature_property(featureId, name, value){
-	$('#add-property').html('');
-	$('#properties').append('<tr><td>'+name+' : '+value+'</td></tr>');
+function update_property_changes(featureId, oldName, oldValue, name, value){
+	delete theFeature.p[''+oldName];
 	var t= theFeature.getProperties();
 	t[''+name]=value;
 	theFeature.setProperties(t);
+	
+	$('#properties tr').each(function( index, element ) {
+		if($('#property-name', element).html() == oldName && $('#property-value', element).html() == oldValue){
+			$('#property-name', element).html(name);
+			$('#property-value', element).html(value);
+		};
+	});
+	$('#add-property').html('');
+	
+}
+function update_feature_property(featureId, name, value){
+	$('#add-property').html('');
+	$('#properties').append('<tr><td><span id="property-name">' + name + '</span> : <span id="property-value">' + value + '</span> <span class="tools"> [ <span onclick="show_edit_property('+featureId+', \'' + name + '\',  \'' + value+ '\')">Edit</span> | <span onclick="confirm_delete_property('+featureId+', \'' + name + '\',  \'' + value+ '\')">Remove</span> ] </span></td></tr>');
+		
+	var t= theFeature.getProperties();
+	t[''+name]=value;
+	theFeature.setProperties(t);
+	
+}
+
+function confirm_delete_property(featureId, name, value){
+	if(confirm("Are you sure?")){
+		gis_delete_proporty(featureId, name, value);
+	}
+}
+function delete_property_changes(featureId, name, value){
+		var t= theFeature.getProperties();
+		delete theFeature.p[''+name];
+		
+		$('#properties tr').each(function( index, element ) {
+			if($('#property-name', element).html() == name && $('#property-value', element).html() == value){
+				$(element).html('');
+			};
+		});
+		
 }
 function show_edit_property(featureId, name, value){
-   $('#properties-panel').prepend('<table class="emTable" id="add-property"> <tbody><tr> <td class="mainRowEven"><b style="line-height: 28px;">Edit Property</b><input type="button" style="float: right;margin-left:3px;" class="styleTehButton" onclick="$(\'#add-property\').html(\'\')" value="Cancle"><input type="button" style="float: right;" class="styleTehButton" onclick="update_property('+featureId+',\''+name+'\',\''+value+'\');" value="Save Property"></td></tr><tr><td>name : <input type="text" name="name"/> </td></tr><tr><td>Value : <input type="text" name="value"/> </td></tr></tbody></table>');
+   $('#properties-panel #add-property-panel').html('<table class="emTable" id="add-property"> <tbody><tr> <td class="mainRowEven"><b style="line-height: 28px;">Edit Property</b><input type="button" style="float: right;margin-left:3px;" class="styleTehButton" onclick="$(\'#add-property\').html(\'\')" value="Cancle"><input type="button" style="float: right;" class="styleTehButton" onclick="update_property('+featureId+',\''+name+'\',\''+value+'\');" value="Save Property"></td></tr><tr><td>name : <input type="text" name="name" value="'+name+'"/> </td></tr><tr><td>Value : <input type="text" name="value" value="'+value+'"/> </td></tr></tbody></table>');
 }
 
 //Helper functions
 function toggleVisibility(id){
-   getLayer(id).setVisible($('#layers input#'+id).is(':checked'));
+	Q = $('#layers #'+id +' input');
+   getLayer(id).setVisible($('#layers #'+id +' input').is(':checked'));
 }
 function getLayer(id){
    return olmap.getLayers().getArray().filter(function(layer) {
