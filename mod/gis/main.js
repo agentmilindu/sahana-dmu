@@ -68,6 +68,12 @@ $(document).ready(function(){
 });	 
 
 //Maps
+
+function confirm_rename_map( ){
+	if(confirm("Are you sure?")){
+		gis_update_map(app.map_id, $('#map-name').val());
+	}
+}
 function confirm_delete_map( map_id ){
 	if(confirm("Are you sure?")){
 		gis_delete_map(map_id)
@@ -142,11 +148,14 @@ function save_layer(){
 
 	if($('#add-layer-options #Tile').is(':checked')){
 		if($('#add-layer-options #name').val()){
-			var tileService = $('#add-layer-options #name').val();
-			var layerName = $('#add-layer-options #name').val();
+			var tileService = $('#add-layer-options #tile-service').val();
+			var layerName =   $('#add-layer-options #name').val();
 			var options = '';
-			if(tileService = 'osm' ){
+			if(tileService == 'osm' ){
 			 options = ' { source: new ol.source.OSM() }';
+			}
+			else if(tileService == 'bing' ){
+			 options = ' {source:new ol.source.BingMaps({ key: "Arq0xB1u1S-NdRt5VevdRP57vEwR_IXfH1CvUVNxTdYIn22OTRaYKvvI3MUUgldd", imagerySet:"AerialWithLabels"})}';
 			}
 			gis_create_tile_layer(app.map_id, layerName, tileService, options);
 		}else{
@@ -155,7 +164,12 @@ function save_layer(){
 	}
 	else if($('#add-layer-options #Vector').is(':checked')){
 		if($('#add-layer-options #name').val()){
-			gis_create_vector_layer(app.map_id, $('#add-layer-options #name').val(), '', $('#add-layer-options #GeoJSON-data').val());
+			if($('#layer-options #fileName').val()){
+				alert('gis_create_vector_layer_by_URL'+$('#layer-options #fileName').val());
+				gis_create_vector_layer_by_URL(app.map_id, $('#add-layer-options #name').val(), '', $('#layer-options #fileName').val());
+			}else{
+				gis_create_vector_layer(app.map_id, $('#add-layer-options #name').val(), '', $('#add-layer-options #GeoJSON-data').val());
+			}
 		}else{
 			alert('Please, enter a name for the layer!');
 		}

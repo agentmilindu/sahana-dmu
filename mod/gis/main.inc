@@ -33,6 +33,7 @@ shn_xajax_registerFunction('gis_get_Vector_layer_data');
 shn_xajax_registerFunction('gis_create_tile_layer');
 shn_xajax_registerFunction('gis_create_image_layer');
 shn_xajax_registerFunction('gis_create_vector_layer');
+shn_xajax_registerFunction('gis_create_vector_layer_by_URL');
 
 shn_xajax_registerFunction('gis_Tile_layer_options');
 shn_xajax_registerFunction('gis_vector_layer_options');
@@ -54,14 +55,20 @@ function shn_gis_default()
     shn_tabmenu_close();
     
     if (isset($_GET['rez'])) {
-        $control = "shn_rez_adm_default";
-        require_once($global['approot'] . "mod/rez/admin.inc");
+        //$control = "shn_rez_adm_default";
+       // require_once($global['approot'] . "mod/rez/admin.inc");
         
     } elseif (isset($_GET['add'])) {
         $control = "shn_gis_add_map";
         
     } else if (isset($_GET['layer_id'])) {
         $control = "gis_get_vector_layer_data_geojson(" . $_GET['layer_id'] . ")";
+    }
+	else if (isset($_GET['upload'])) {
+        $control = "gis_file_upload";
+    }
+	else if (isset($_GET['read'])) {
+        $control = "gis_read";
     }
     
     if ($control == "") {
@@ -89,7 +96,23 @@ function shn_gis_build()
             echo "<div class='map-item'onclick=\"javascript: window.location = '?add&tabid=1&map_id=" . $row['map_id'] . "&name=" . $row['name'] . "'\"><img src='" . $row['thumbnail'] . "'/><br/>" . $row['name'] . "</div>";
         }
     }
+	
+	
     
+}
+function shn_text_gis_upload()
+{
+	if ($_FILES["file"]["error"] > 0) {
+	  echo "{Error: " . $_FILES["file"]["error"] . "}";
+	} else {
+	  // echo "{ Upload: " . $_FILES["file"]["name"] . ",";
+	  // echo "Type: " . $_FILES["file"]["type"] . ",";
+	  // echo "Size: " . ($_FILES["file"]["size"] / 1024) . ",";
+	  echo "" . $_FILES["file"]["tmp_name"]."";
+	  $name = $_FILES["file"]["name"];
+	  move_uploaded_file($_FILES["file"]["tmp_name"], "tmp/$name");
+	}
+
 }
 function shn_gis_add_map()
 {
@@ -101,7 +124,6 @@ function shn_gis_add_map()
 	<!-- loading resources from external sources just for testing, will replace them with local sources -->
 	<script src="http://ol3js.org/en/master/build/ol.js" type="text/javascript"></script>
 	<script type="text/javascript" src="res/js/jquery-1.6.4.min.js" ></script>
-	
 	
 	<table class="emTable">
 	<tbody><tr>
@@ -116,7 +138,7 @@ function shn_gis_add_map()
     } else {
 ?>
 			    &nbsp;  &nbsp;<input type="button" style="float: right;" class="styleTehButton" onclick="confirm_delete_map(<?= $_GET['map_id'] ?>);" value="Delete map">
-				&nbsp;  &nbsp;<input type="button" style="float: right;margin-right:2px;" class="styleTehButton" onclick="gis_update_map();" value="Update map"/>
+				&nbsp;  &nbsp;<input type="button" style="float: right;margin-right:2px;" class="styleTehButton" onclick="confirm_rename_map();" value="Update map"/>
 				
 			<?php
     }
@@ -146,4 +168,10 @@ function shn_gis_add_map()
     $map_id = isset($_GET['name'])?$_GET['map_id']:'';
     echo "<script> " . file_get_contents($global['approot'] . "/mod/gis/main.js") . "init_map($map_id);</script>";
     
+}
+function gis_read(){
+	echo file_get_contents('tmp/map (5).geojson');
+	echo "<br/>END";
+	
+
 }

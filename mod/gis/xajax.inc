@@ -31,6 +31,7 @@ array_push($global['xajax_functions'],'gis_get_Vector_layer_data');
 array_push($global['xajax_functions'],'gis_create_tile_layer');
 array_push($global['xajax_functions'],'gis_create_image_layer');
 array_push($global['xajax_functions'],'gis_create_vector_layer');
+array_push($global['xajax_functions'],'gis_create_vector_layer_by_URL');
 
 array_push($global['xajax_functions'],'gis_Tile_layer_options');
 array_push($global['xajax_functions'],'gis_vector_layer_options');
@@ -61,11 +62,32 @@ function gis_save_map($name) {
 	$global['xajax_res']->addScript("window.location='?add&tabid=1&map_id=".mysql_insert_id()."&name=$name'");
 	return $global['xajax_res']->getXML();
 }
-function gis_update_map() {
+function gis_update_map($id, $newName) {
 	global $global;
+	$q = "
+		UPDATE map SET name='$newName' WHERE map_id=$id;
+	";
+	$result = $global['db']->Execute($q);
+	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserting map"); }
 	
-	$global['xajax_res']->addAppend('rezLog','innerHTML',$message);
-	$global['xajax_res']->addScript("window.location='?add&tabid=1&map_id=".$global['db']->Insert_ID()."&name=$name'");
+
+	$global['xajax_res']->addScript("$('#map-name').val('$newName')");
+	return $global['xajax_res']->getXML();
+}
+function gis_delete_map($id) {
+	global $global;
+	$q = "
+		DELETE FROM map_has_layer WHERE map_map_id=$id;
+	";
+	$result = $global['db']->Execute($q);
+	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Delete map_has_layer"); }
+	$q = "
+		DELETE FROM map WHERE map_id=$id;
+	";
+	$result = $global['db']->Execute($q);
+	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Delete map_has_layer"); }
+	
+	$global['xajax_res']->addScript("window.location='?maps&tabid=0'");
 	return $global['xajax_res']->getXML();
 }
 
@@ -122,11 +144,14 @@ global $global;
 	return $global['xajax_res']->getXML();
 
 }
+function gis_create_vector_layer_by_URL($map_id, $name, $options, $url ){
+	return gis_create_vector_layer($map_id, $name, $options, file_get_contents('tmp/'.$url));
+}
 function gis_create_vector_layer($map_id, $name, $options, $GeoJSONString) {
 	global $global;
 	
 	$GeoJSON = json_decode($GeoJSONString, true);
-        //(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserting feature ".$GeoJSONString." ".$GeoJSON['type']);
+        daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, 'gis_create_vector_layer', $GeoJSONString." ".$GeoJSON['type']);
 	
 	
 	$q = "
@@ -240,7 +265,8 @@ function gis_create_vector_layer($map_id, $name, $options, $GeoJSONString) {
 	//$global['xajax_res']->addAppend('rezLog','innerHTML',$message);
 	//$global['xajax_res']->addScript("alert(".$layer_id.")");
 	//return $global['xajax_res']->getXML();
-	gis_get_Vector_layer_data($name, $layer_id);
+	$global['xajax_res']->addScript("$('#add-layer').html('');");
+	return gis_get_Vector_layer_data($name, $layer_id);
 }
 function gis_get_layer_data($map_id) {
 	global $global;
@@ -394,14 +420,38 @@ function gis_Tile_layer_options(){
 	$output = '<select onchange="" id="tile-service">
   <option value="osm">OpenStreetMap</option>
   <option value="bing">Bing</option>
-  <option value="google">Google</option>
 </select><div id="tile-options"></div>';
 	$global['xajax_res']->addAssign('layer-options','innerHTML',$output);
 	return $global['xajax_res']->getXML();
 }
 function gis_vector_layer_options(){
 	global $global;
-	$output = '<br/>GeoJSON:<br/><textarea id="GeoJSON-data" style="width: 95%;"></textarea>';
+	$output = '<br/>GeoJSON:<br/><textarea id="GeoJSON-data" style="width: 95%;"></textarea><br/><br/> Or: <input id="fileupload" type="file" name="file"><!-- The global progress bar --><div id="progress" class="progress"><div class="progress-bar progress-bar-success"></div></div>';
+	//$global['xajax_res']->addIncludeScript('res/js/jquery.ui.widget.js');
+	//$global['xajax_res']->addIncludeScript('res/js/jquery.fileupload.js');
+	//$global['xajax_res']->addIncludeScript('../mod/gis/fileupload.js');
+	$global['xajax_res']->addScript("
+		$.getScript( 'res/js/jquery.ui.widget.js', function( data, textStatus, jqxhr ) {
+			alert('res/js/jquery.ui.widget.js');
+			$.getScript( 'res/js/jquery.fileupload.js', function( data, textStatus, jqxhr ) {
+				alert('res/js/jquery.ui.fileupload.js');
+				$('#fileupload').fileupload({
+				url: 'index.php?stream=text&mod=gis&act=upload',
+				dataType: 'text',
+				done: function (e, data) {
+					$('#add-layer-options #GeoJSON-data').hide();
+					$('#add-layer-options').append('<input type=\"hidden\" value=\"'+data.result+'\" name=\"URL\" id=\"URL\" />');
+					$.each(data.files, function (index, file) {
+						$('#layer-options').html('<input type=\"text\" value=\"'+file.name+'\" name=\"fileName\" id=\"fileName\" disabled/>');
+					
+					});
+				},progressall: function (e, data) {
+					var progress = parseInt(data.loaded / data.total * 100, 10);
+					$('#progress .progress-bar').css('width', progress + '%');
+				}});
+			});
+		});
+	");
 	$global['xajax_res']->addAssign('layer-options','innerHTML',$output);
 	return $global['xajax_res']->getXML();
 }
