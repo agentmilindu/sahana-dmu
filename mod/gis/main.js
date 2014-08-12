@@ -110,6 +110,9 @@ function init_layers( data ){
 		else if(this.type == "1" ){
 			gis_get_Vector_layer_data(this.name,this.id);
 		}
+		else if(this.type == "2" ){
+			add_image_layer(this.id, this.name, this.options);
+		}
 	});
 }
 
@@ -174,16 +177,25 @@ function save_layer(){
 			alert('Please, enter a name for the layer!');
 		}
 	}
-
 	else if($('#add-layer-options #Image').is(':checked')){
 		if($('#add-layer-options #name').val()){
 			//gis_create_vector_layer(app.map_id, $('#add-layer-options #name').val(), '', $('#add-layer-options #GeoJSON-data').val());
+			var options ={};
+			options.url = $('#add-layer-options #url').val();
+			options.projection = $('#add-layer-options #proj').val();
+			options.imageSize = [$('#add-layer-options #h').val(), $('#add-layer-options #w').val()];
+			options.imageExtent = [$('#add-layer-options #tlln').val(), $('#add-layer-options #tllt').val(), $('#add-layer-options #brln').val(), $('#add-layer-options #brlt').val()];
+
+			gis_create_image_layer(app.map_id, $('#add-layer-options #name').val(), JSON.stringify(options));
 			olmap.addLayer(new ol.layer.Image({
 				source: new ol.source.ImageStatic({
 						url: $('#add-layer-options #url').val(),
-						imageSize: [193, 261],
-						imageExtent:  [7938720, 953570, 8167236, 576900], 
-						projection: 'EPSG:3857'
+						imageSize: [$('#add-layer-options #h').val(), $('#add-layer-options #w').val()],
+						//[193, 261]
+						imageExtent:  [$('#add-layer-options #tlln').val(), $('#add-layer-options #tllt').val(), $('#add-layer-options #brln').val(), $('#add-layer-options #brlt').val()], 
+						//imageExtent:  [7938720, 953570, 8167236, 576900], 
+						projection: $('#add-layer-options #proj').val()
+						//projection: 'EPSG:3857'
 					})
 				}));
 		}else{
@@ -208,6 +220,17 @@ function add_vector_layer(id,  name, data ){
   });
   		$('#layers').append("<tr id='"+id+"'> <td class='mainRow'><input type='checkbox' id='"+id+"' onclick='toggleVisibility("+id+")' checked/><span class='name'>"+name+"</span>  <span class='tools'> [ <span onclick='show_rename_layer("+id+")'>Rename </span> | <span onclick='confirm_delete_layer("+id+")'> Delete</span> ] </span></td></tr>");
 olmap.addLayer(jsonLayer);
+}
+//function for adding a image layer onto to the OL3 map
+function add_image_layer(id,  name, data ){
+    var options = eval("( "+data+")");
+	options.id = parseInt(id);
+	xx_image_layer = options;
+	olmap.addLayer(new ol.layer.Image({
+				source: new ol.source.ImageStatic(options)
+				}));
+	$('#layers').append("<tr id='"+id+"'> <td class='mainRow'><input type='checkbox' id='"+id+"' onclick='toggleVisibility("+id+")' checked/><span class='name'>"+name+"</span>  <span class='tools'> [ <span onclick='show_rename_layer("+id+")'>Rename </span> | <span onclick='confirm_delete_layer("+id+")'>Delete</span> ] </span></td></tr>");
+
 }
 //function for adding a tile layer onto to the OL3 map
 function add_tile_layer(id,  name, data ){

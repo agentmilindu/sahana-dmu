@@ -67,6 +67,9 @@ function shn_gis_default()
 	else if (isset($_GET['upload'])) {
         $control = "gis_file_upload";
     }
+	else if (isset($_GET['image'])) {
+        $control = "gis_file_image_upload";
+    }
 	else if (isset($_GET['read'])) {
         $control = "gis_read";
     }
@@ -111,6 +114,20 @@ function shn_text_gis_upload()
 	  echo "" . $_FILES["file"]["tmp_name"]."";
 	  $name = $_FILES["file"]["name"];
 	  move_uploaded_file($_FILES["file"]["tmp_name"], "tmp/$name");
+	}
+
+}
+function shn_text_gis_image()
+{
+	if ($_FILES["file"]["error"] > 0) {
+	  echo "{Error: " . $_FILES["file"]["error"] . "}";
+	} else {
+	  // echo "{ Upload: " . $_FILES["file"]["name"] . ",";
+	  // echo "Type: " . $_FILES["file"]["type"] . ",";
+	  // echo "Size: " . ($_FILES["file"]["size"] / 1024) . ",";
+	  echo "" . $_FILES["file"]["name"]."";
+	  $name = $_FILES["file"]["name"];
+	  move_uploaded_file($_FILES["file"]["tmp_name"], "res/uploads/gis/$name");
 	}
 
 }

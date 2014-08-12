@@ -125,7 +125,7 @@ function gis_delete_layer($id) {
 }
 
 function gis_create_tile_layer($map_id, $name, $tileService, $options){
-global $global;
+	global $global;
 	$q = "
 		INSERT INTO layer (name, type, options)
 		VALUES ('$name','0','$options');
@@ -141,6 +141,26 @@ global $global;
 	$result = $global['db']->Execute($q);
 	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserting map_has_layer"); }
 	$global['xajax_res']->addScript("add_tile_layer($layer_id, '$name', ' $options ');$('#add-layer-options').remove()");
+	return $global['xajax_res']->getXML();
+
+}
+function gis_create_image_layer($map_id, $name, $options){
+	global $global;
+	$q = "
+		INSERT INTO layer (name, type, options)
+		VALUES ('$name','2','$options');
+	";
+	$result = $global['db']->Execute($q);
+	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserting layer"); }
+	$layer_id = $global['db'] -> Insert_ID();
+	//daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserted layer ");
+	$q = "
+		INSERT INTO map_has_layer (map_map_id, layer_layer_id, owner)
+		VALUES ($map_id,$layer_id,1);
+	";
+	$result = $global['db']->Execute($q);
+	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserting map_has_layer"); }
+	$global['xajax_res']->addScript("$('#add-layer-options').remove()");
 	return $global['xajax_res']->getXML();
 
 }
@@ -277,7 +297,7 @@ function gis_get_layer_data($map_id) {
 		JOIN map_has_layer
 		ON map_has_layer.layer_layer_id = layer.layer_id
 		WHERE map_map_id = $map_id
-		ORDER BY  type DESC
+		ORDER BY  type 
 	";
 	$result = $global['db']->Execute($q);
 	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "show events 1"); }
@@ -432,9 +452,7 @@ function gis_vector_layer_options(){
 	//$global['xajax_res']->addIncludeScript('../mod/gis/fileupload.js');
 	$global['xajax_res']->addScript("
 		$.getScript( 'res/js/jquery.ui.widget.js', function( data, textStatus, jqxhr ) {
-			alert('res/js/jquery.ui.widget.js');
 			$.getScript( 'res/js/jquery.fileupload.js', function( data, textStatus, jqxhr ) {
-				alert('res/js/jquery.ui.fileupload.js');
 				$('#fileupload').fileupload({
 				url: 'index.php?stream=text&mod=gis&act=upload',
 				dataType: 'text',
@@ -442,7 +460,7 @@ function gis_vector_layer_options(){
 					$('#add-layer-options #GeoJSON-data').hide();
 					$('#add-layer-options').append('<input type=\"hidden\" value=\"'+data.result+'\" name=\"URL\" id=\"URL\" />');
 					$.each(data.files, function (index, file) {
-						$('#layer-options').html('<input type=\"text\" value=\"'+file.name+'\" name=\"fileName\" id=\"fileName\" disabled/>');
+						$('#layer-options').html('File : <input type=\"text\" value=\"'+file.name+'\" name=\"fileName\" id=\"fileName\" disabled/>');
 					
 					});
 				},progressall: function (e, data) {
@@ -458,11 +476,31 @@ function gis_vector_layer_options(){
 
 function gis_image_layer_options(){
 	global $global;
-	$output = '<hr/><table><tr><td>URL: <input type="text" id="url"/> </td></tr>';
+	$output = '<hr/><table id="image-options"><tr><td>Upload: <input type="file" id="fileupload" name="file"/> </td></tr>';
+	$output .= '<tr><td>URL: <input type="text" id="url"/> </td></tr>';
+	$output .= '<tr><td>Projection: <select id="proj" > <option value="EPSG:3857">EPSG:3857</option><option value="EPSG:4326">EPSG:4326</option></select> </td></tr>';
 	$output .= '<tr><td>Top-left long: <input type="text" id="tlln"/> </td></tr>';
 	$output .= '<tr><td>Top-left lat: <input type="text" id="tllt"/> </td></tr>';
 	$output .= '<tr><td>Bottom-right long: <input type="text" id="brln"/> </td></tr>';
-	$output .= '<tr><td>Bottom-right lat: <input type="text" id="brlt"/> </td></tr></table>';
+	$output .= '<tr><td>Bottom-right lat: <input type="text" id="brlt"/> </td></tr>';
+	$output .= '<tr><td>Height: <input type="text" id="h"/> </td></tr>';
+	$output .= '<tr><td>Width : <input type="text" id="w"/> </td></tr></table>';
+	$global['xajax_res']->addScript("
+		$.getScript( 'res/js/jquery.ui.widget.js', function( data, textStatus, jqxhr ) {
+			$.getScript( 'res/js/jquery.fileupload.js', function( data, textStatus, jqxhr ) {
+				$('#fileupload').fileupload({
+				url: 'index.php?stream=text&mod=gis&act=image',
+				dataType: 'text',
+				done: function (e, data) {
+					$('#image-options').prepend('<input type=\"hidden\" value=\"'+data.result+'\" name=\"URL\" id=\"URL\" />');
+					$('#image-options #url').val('res/uploads/gis/'+data.result);
+				},progressall: function (e, data) {
+					var progress = parseInt(data.loaded / data.total * 100, 10);
+					$('#progress .progress-bar').css('width', progress + '%');
+				}});
+			});
+		});
+	");
 	$global['xajax_res']->addAssign('layer-options','innerHTML',$output);
 	return $global['xajax_res']->getXML();
 }
