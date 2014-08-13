@@ -64,8 +64,27 @@ $(document).ready(function(){
 		return highlightStyleCache[text];
 	  }
 	});
-	  
+	 
+
+//Utils
+// $('#snap-map').click(function(e){
+		// alert();
+		// olmap.once('postcompose', function(event) {
+			// var canvas = event.context.canvas;
+			// $('#snap-map').attr("href", canvas.toDataURL('image/png'));
+		// });
+		// olmap.render();
+  // });
 });	 
+
+var exportPNGElement = document.getElementById('snap-map');
+exportPNGElement.addEventListener('click', function(e) {
+    olmap.once('postcompose', function(event) {
+      var canvas = event.context.canvas;
+      exportPNGElement.href = canvas.toDataURL('image/png');
+    });
+    olmap.render();
+  }, false);
 
 //Maps
 
@@ -187,17 +206,11 @@ function save_layer(){
 			options.imageExtent = [$('#add-layer-options #tlln').val(), $('#add-layer-options #tllt').val(), $('#add-layer-options #brln').val(), $('#add-layer-options #brlt').val()];
 
 			gis_create_image_layer(app.map_id, $('#add-layer-options #name').val(), JSON.stringify(options));
-			olmap.addLayer(new ol.layer.Image({
-				source: new ol.source.ImageStatic({
-						url: $('#add-layer-options #url').val(),
-						imageSize: [$('#add-layer-options #h').val(), $('#add-layer-options #w').val()],
-						//[193, 261]
-						imageExtent:  [$('#add-layer-options #tlln').val(), $('#add-layer-options #tllt').val(), $('#add-layer-options #brln').val(), $('#add-layer-options #brlt').val()], 
-						//imageExtent:  [7938720, 953570, 8167236, 576900], 
-						projection: $('#add-layer-options #proj').val()
-						//projection: 'EPSG:3857'
-					})
-				}));
+			// 
+			// url: 
+			// imageSize: [193, 261]
+			// imageExtent:  [7938720, 953570, 8167236, 576900], 
+			// projection: 'EPSG:3857'
 		}else{
 			alert('Please, enter a name for the layer!');
 		}
@@ -351,7 +364,6 @@ function delete_property_changes(featureId, name, value){
 function show_edit_property(featureId, name, value){
    $('#properties-panel #add-property-panel').html('<table class="emTable" id="add-property"> <tbody><tr> <td class="mainRowEven"><b style="line-height: 28px;">Edit Property</b><input type="button" style="float: right;margin-left:3px;" class="styleTehButton" onclick="$(\'#add-property\').html(\'\')" value="Cancle"><input type="button" style="float: right;" class="styleTehButton" onclick="update_property('+featureId+',\''+name+'\',\''+value+'\');" value="Save Property"></td></tr><tr><td>name : <input type="text" name="name" value="'+name+'"/> </td></tr><tr><td>Value : <input type="text" name="value" value="'+value+'"/> </td></tr></tbody></table>');
 }
-
 //Helper functions
 function toggleVisibility(id){
 	Q = $('#layers #'+id +' input');

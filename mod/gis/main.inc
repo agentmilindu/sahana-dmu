@@ -174,7 +174,7 @@ function shn_gis_add_map()
 			<label>latitude: </label>
 				<input id="latitude" type="text" value="0" readonly="">
 			<label> &nbsp; longitude: </label>
-				<input id="longitude" type="text" value="0" readonly="">
+				<input id="longitude" type="text" value="0" readonly=""><a id="snap-map" download="map.png" style="cursor:pointer" target="blank">Snap</a>
 		</td>
 	</tr>
 </tbody></table>

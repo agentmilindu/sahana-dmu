@@ -160,7 +160,7 @@ function gis_create_image_layer($map_id, $name, $options){
 	";
 	$result = $global['db']->Execute($q);
 	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserting map_has_layer"); }
-	$global['xajax_res']->addScript("$('#add-layer-options').remove()");
+	$global['xajax_res']->addScript("alert('Q');add_image_layer($layer_id, '$name', ' $options ');$('#add-layer-options').remove()");
 	return $global['xajax_res']->getXML();
 
 }
