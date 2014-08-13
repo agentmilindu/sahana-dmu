@@ -69,7 +69,7 @@
  * Deafult image logo used be the default Header() method.
  * Please set here your own logo or an empty string to disable it.
  */
-//define ('PDF_HEADER_LOGO', '');
+//define ('PDF_HEADER_LOGO', 'sahana.png');
 
 /**
  * Header logo image width in user units.
@@ -109,12 +109,12 @@ define ('PDF_AUTHOR', 'TCPDF');
 /**
  * Header title.
  */
-define ('PDF_HEADER_TITLE', 'TCPDF Example');
+define ('PDF_HEADER_TITLE', 'Sahana DMU  Reporting');
 
 /**
  * Header description string.
  */
-define ('PDF_HEADER_STRING', "by Nicola Asuni - Tecnick.com\nwww.tcpdf.org");
+define ('PDF_HEADER_STRING', "by Sahana Foundation ");
 
 /**
  * Document unit of measure [pt=point, mm=millimeter, cm=centimeter, in=inch].
