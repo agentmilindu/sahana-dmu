@@ -205,6 +205,13 @@ function save_layer(){
 			alert('Please, enter a name for the layer!');
 		}
 	}
+	else if($('#add-layer-options #Import').is(':checked')){
+		if($('#add-layer-options #name').val()){
+			gis_create_layer_by_importing(app.map_id, $('#add-layer-options #name').val(),  $('#layer-options #layer_id').val(),$('#layer-options #layer_type').val());
+		}else{
+			alert('Please, enter a name for the layer!');
+		}
+	}
 
 	else{
 		alert('Please, select a layer type!')
@@ -301,6 +308,10 @@ function showAddImageLayerOptions(){
 }
 function showImportLayerOptions(){
 	gis_import_layer_options();
+}
+function add_layer_to_map(layer_id, layer_name, map_name){
+	$('#layer-options').html("<br/><span>"+map_name+" > "+layer_name+"<input type='hidden' value='"+layer_id+"' id='layer_id'/>");
+	$('#add-layer-options #name').val(layer_name);
 }
 
 //property

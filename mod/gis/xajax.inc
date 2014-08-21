@@ -32,10 +32,13 @@ array_push($global['xajax_functions'],'gis_create_tile_layer');
 array_push($global['xajax_functions'],'gis_create_image_layer');
 array_push($global['xajax_functions'],'gis_create_vector_layer');
 array_push($global['xajax_functions'],'gis_create_vector_layer_by_URL');
+array_push($global['xajax_functions'],'gis_create_layer_by_importing');
 
 array_push($global['xajax_functions'],'gis_Tile_layer_options');
 array_push($global['xajax_functions'],'gis_vector_layer_options');
 array_push($global['xajax_functions'],'gis_image_layer_options');
+array_push($global['xajax_functions'],'gis_import_layer_options');
+array_push($global['xajax_functions'],'gis_show_layers_of_map');
 
 array_push($global['xajax_functions'],'gis_add_property');
 array_push($global['xajax_functions'],'gis_update_property');
@@ -163,6 +166,38 @@ function gis_create_image_layer($map_id, $name, $options){
 	$global['xajax_res']->addScript("add_image_layer($layer_id, '$name', ' $options ');$('#add-layer-options').remove()");
 	return $global['xajax_res']->getXML();
 
+}
+function gis_create_layer_by_importing($map_id, $name, $layer_id ){
+	global $global;
+	$q = "
+		INSERT INTO map_has_layer (map_map_id, layer_layer_id, owner)
+		VALUES ($map_id,$layer_id,0);
+	";
+	$result = $global['db']->Execute($q);
+	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserting map_has_layer"); }
+	$q = "
+		SELECT  type, options
+		FROM layer
+		WHERE layer_id = $layer_id
+	";
+	$result = $global['db']->Execute($q);
+	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "show events 1"); }
+	$layer_type = "";
+	$layer_options = "";
+	if($row = $result->FetchRow() ){
+		$layer_type = $row['type'];
+		$layer_options = $row['options'];
+	}
+	if( $layer_type == "0"){
+		$global['xajax_res']->addScript("add_tile_layer($layer_id, '$name', '$layer_options');$('#add-layer-options').remove()");
+	}
+	else if( $layer_type == "1"){
+		$global['xajax_res']->addScript("gis_get_Vector_layer_data('$name', $layer_id);$('#add-layer-options').remove()");
+	}
+	else if( $layer_type == "2"){
+		$global['xajax_res']->addScript("add_image_layer($layer_id, '$name', '$layer_options');$('#add-layer-options').remove()");
+	}
+	return $global['xajax_res']->getXML();
 }
 function gis_create_vector_layer_by_URL($map_id, $name, $options, $url ){
 	return gis_create_vector_layer($map_id, $name, $options, file_get_contents('tmp/'.$url));
@@ -501,6 +536,54 @@ function gis_image_layer_options(){
 			});
 		});
 	");
+	$global['xajax_res']->addAssign('layer-options','innerHTML',$output);
+	return $global['xajax_res']->getXML();
+}
+function gis_import_layer_options(){
+	global $global;
+	$output = '<hr/><ul id="import-options" style="list-style: none;"><tr>';
+	
+    $q      = "select * from map";
+    $result = $global['db']->Execute($q);
+    if ($result === false) {
+        daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "rez pages header");
+    }
+    
+    if ($result) {
+        // build page info
+        while ($row = $result->FetchRow()) {
+			$output .= '<li  class="map tools" onclick="gis_show_layers_of_map('.$row['map_id'].',\''.$row['name'].'\')" id="'.$row['map_id'].' "><span>'.$row['name'].'</span></li>';
+            //echo "<div class='map-item'onclick=\"javascript: window.location = '?add&tabid=1&map_id=" . $row['map_id'] . "&name=" . $row['name'] . "'\"><img src='" . $row['thumbnail'] . "'/><br/>" . $row['name'] . "</div>";
+        }
+    }
+
+	$output .= '</ul>';
+	$global['xajax_res']->addScript("");
+	$global['xajax_res']->addAssign('layer-options','innerHTML',$output);
+	return $global['xajax_res']->getXML();
+}
+function gis_show_layers_of_map($map_id, $map_name){
+	global $global;
+	$output = '<hr/><ul id="import-options" style="list-style: none;"><tr>';
+	
+    $q = "SELECT layer_id,name, type, options, owner
+		FROM layer
+		JOIN map_has_layer
+		ON map_has_layer.layer_layer_id = layer.layer_id
+		WHERE map_map_id = $map_id
+		ORDER BY  type ";
+    $result = $global['db']->Execute($q);
+    
+    if ($result) {
+        // build page info
+        while ($row = $result->FetchRow()) {
+			$output .= '<li  class="layer tools" onclick="add_layer_to_map('.$row['layer_id'].',\''.$row['name'].'\',\''.$map_name.'\')" id="'.$row['layer_id'].' "><span>'.$row['name'].'</span></li>';
+            //echo "<div class='map-item'onclick=\"javascript: window.location = '?add&tabid=1&map_id=" . $row['map_id'] . "&name=" . $row['name'] . "'\"><img src='" . $row['thumbnail'] . "'/><br/>" . $row['name'] . "</div>";
+        }
+    }
+
+	$output .= '</ul>';
+	$global['xajax_res']->addScript("");
 	$global['xajax_res']->addAssign('layer-options','innerHTML',$output);
 	return $global['xajax_res']->getXML();
 }

@@ -34,10 +34,14 @@ shn_xajax_registerFunction('gis_create_tile_layer');
 shn_xajax_registerFunction('gis_create_image_layer');
 shn_xajax_registerFunction('gis_create_vector_layer');
 shn_xajax_registerFunction('gis_create_vector_layer_by_URL');
+shn_xajax_registerFunction('gis_create_layer_by_importing');
 
 shn_xajax_registerFunction('gis_Tile_layer_options');
 shn_xajax_registerFunction('gis_vector_layer_options');
 shn_xajax_registerFunction('gis_image_layer_options');
+shn_xajax_registerFunction('gis_import_layer_options');
+shn_xajax_registerFunction('gis_show_layers_of_map');
+
 shn_xajax_registerFunction('gis_add_property');
 shn_xajax_registerFunction('gis_update_property');
 shn_xajax_registerFunction('gis_delete_proporty');
