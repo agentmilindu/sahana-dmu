@@ -92,7 +92,7 @@ function shn_gis_build()
     if ($result === false) {
         daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "rez pages header");
     }
-    echo "<div class='map-item' onclick=\"javascript: window.location = '?add&tabid=1'\"><img src='http://placehold.it/150x150'/><br/>Add new map</div>";
+    echo "<div class='map-item' onclick=\"javascript: window.location = '?add&tabid=1'\"><img src='res/img/add-a-map.jpg'/><br/>Add new map</div>";
     if ($result) {
         // build page info
         while ($row = $result->FetchRow()) {

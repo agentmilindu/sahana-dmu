@@ -65,16 +65,6 @@ $(document).ready(function(){
 	  }
 	});
 	 
-
-//Utils
-// $('#snap-map').click(function(e){
-		// alert();
-		// olmap.once('postcompose', function(event) {
-			// var canvas = event.context.canvas;
-			// $('#snap-map').attr("href", canvas.toDataURL('image/png'));
-		// });
-		// olmap.render();
-  // });
 });	 
 
 var exportPNGElement = document.getElementById('snap-map');
@@ -187,7 +177,7 @@ function save_layer(){
 	else if($('#add-layer-options #Vector').is(':checked')){
 		if($('#add-layer-options #name').val()){
 			if($('#layer-options #fileName').val()){
-				alert('gis_create_vector_layer_by_URL'+$('#layer-options #fileName').val());
+				//alert('gis_create_vector_layer_by_URL'+$('#layer-options #fileName').val());
 				gis_create_vector_layer_by_URL(app.map_id, $('#add-layer-options #name').val(), '', $('#layer-options #fileName').val());
 			}else{
 				gis_create_vector_layer(app.map_id, $('#add-layer-options #name').val(), '', $('#add-layer-options #GeoJSON-data').val());
@@ -203,7 +193,7 @@ function save_layer(){
 			options.url = $('#add-layer-options #url').val();
 			options.projection = $('#add-layer-options #proj').val();
 			options.imageSize = [$('#add-layer-options #h').val(), $('#add-layer-options #w').val()];
-			options.imageExtent = [$('#add-layer-options #tlln').val(), $('#add-layer-options #tllt').val(), $('#add-layer-options #brln').val(), $('#add-layer-options #brlt').val()];
+			options.imageExtent = [$('#add-layer-options #tlln').val()*100000, $('#add-layer-options #tllt').val()*100000, $('#add-layer-options #brln').val()*100000, $('#add-layer-options #brlt').val()*100000];
 
 			gis_create_image_layer(app.map_id, $('#add-layer-options #name').val(), JSON.stringify(options));
 			// 
@@ -238,10 +228,11 @@ olmap.addLayer(jsonLayer);
 function add_image_layer(id,  name, data ){
     var options = eval("( "+data+")");
 	options.id = parseInt(id);
-	xx_image_layer = options;
-	olmap.addLayer(new ol.layer.Image({
+	image_layer = new ol.layer.Image({
 				source: new ol.source.ImageStatic(options)
-				}));
+				});
+	image_layer.set("id", parseInt(id));
+	olmap.addLayer(image_layer);
 	$('#layers').append("<tr id='"+id+"'> <td class='mainRow'><input type='checkbox' id='"+id+"' onclick='toggleVisibility("+id+")' checked/><span class='name'>"+name+"</span>  <span class='tools'> [ <span onclick='show_rename_layer("+id+")'>Rename </span> | <span onclick='confirm_delete_layer("+id+")'>Delete</span> ] </span></td></tr>");
 
 }
@@ -308,6 +299,9 @@ function showAddVectorLayerOptions(){
 function showAddImageLayerOptions(){
 	gis_image_layer_options();
 }
+function showImportLayerOptions(){
+	gis_import_layer_options();
+}
 
 //property
 
@@ -330,6 +324,10 @@ function update_property_changes(featureId, oldName, oldValue, name, value){
 		if($('#property-name', element).html() == oldName && $('#property-value', element).html() == oldValue){
 			$('#property-name', element).html(name);
 			$('#property-value', element).html(value);
+			AAA = element;
+			$('.tools span', element).get(0).onclick=function onclick(event) {
+			  show_edit_property(index, $('#property-name', element).html(),  $('#property-value', element).html());
+			}
 		};
 	});
 	$('#add-property').html('');

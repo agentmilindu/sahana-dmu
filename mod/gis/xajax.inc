@@ -55,7 +55,7 @@ function gis_save_map($name) {
 	global $global;
 	$q = "
 		INSERT INTO map(name,thumbnail)
-		VALUES ('$name','http://placehold.it/150x150');
+		VALUES ('$name','res/img/a-map.png');
 	";
 	$result = $global['db']->Execute($q);
 	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserting map"); }
@@ -96,7 +96,7 @@ function gis_delete_map($id) {
 function gis_add_layer() {
 	global $global;
 	$output = '<table class="emTable" id="add-layer-options"><tbody> <tr> <td class="mainRowEven"><b style="line-height: 28px;">Add layer</b> <input type="button" style="float: right; margin-left:3px;" class="styleTehButton" onclick="cancle_add_layer();" value="Cancel"><input type="button" style="float: right;" class="styleTehButton" onclick="save_layer();" value="Save"></td></tr>
-<tr><td>Name: <input type="text" id="name"/> </td></tr><tr><td>Type: <label for="Tile" > <input type="radio" name="layer-type" value="Tile" id="Tile" onclick="showAddTileLayerOptions()"/> Tile Layer</label><label for="Vector"> <input type="radio" name="layer-type" value="Vector" id="Vector" onclick="showAddVectorLayerOptions()"/> Vector Layer</label> <input type="radio" name="layer-type" value="Image" id="Image" onclick="showAddImageLayerOptions()"/> Image Layer</label><div id="layer-options"></div></td></tr><tr><td></td></tr></tbody></table>';
+<tr><td>Name: <input type="text" id="name"/> </td></tr><tr><td>Type: <label for="Tile" > <input type="radio" name="layer-type" value="Tile" id="Tile" onclick="showAddTileLayerOptions()"/> Tile Layer</label><label for="Vector"> <input type="radio" name="layer-type" value="Vector" id="Vector" onclick="showAddVectorLayerOptions()"/> Vector Layer</label> <input type="radio" name="layer-type" value="Image" id="Image" onclick="showAddImageLayerOptions()"/> Image Layer</label><label for="Tile" > <input type="radio" name="layer-type" value="Import" id="Import" onclick="showImportLayerOptions()"/> Import Layer</label><div id="layer-options"></div></td></tr><tr><td></td></tr></tbody></table>';
 	$global['xajax_res']->addAssign('add-layer','innerHTML',$output);
 	$global['xajax_res']->addScript("");
 	return $global['xajax_res']->getXML();
@@ -120,7 +120,7 @@ function gis_delete_layer($id) {
 	$result = $global['db']->Execute($q);
 	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Delete map_has_layer"); }
 	
-	$global['xajax_res']->addScript("$('#layers tr#$id').html('');");
+	$global['xajax_res']->addScript("$('#layers tr#$id').html('');getLayer($id).setVisible(false);");
 	return $global['xajax_res']->getXML();
 }
 
@@ -160,7 +160,7 @@ function gis_create_image_layer($map_id, $name, $options){
 	";
 	$result = $global['db']->Execute($q);
 	if($result === false) { daoErrorLog(__FILE__, __LINE__, __METHOD__, __CLASS__, __FUNCTION__, $global['db']->ErrorMsg(), "Inserting map_has_layer"); }
-	$global['xajax_res']->addScript("alert('Q');add_image_layer($layer_id, '$name', ' $options ');$('#add-layer-options').remove()");
+	$global['xajax_res']->addScript("add_image_layer($layer_id, '$name', ' $options ');$('#add-layer-options').remove()");
 	return $global['xajax_res']->getXML();
 
 }
