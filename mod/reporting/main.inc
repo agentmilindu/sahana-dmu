@@ -28,31 +28,40 @@ function shn_reporting_default()
     
     global $global;
     $control = "";
-    
+	
+    shn_tabmenu_open();
+    shn_tabmenu_item("dar", _t("Reporting-Menu| DAR"), "reporting");
+    shn_tabmenu_item("gis", _t("Reporting-Menu| GIS"), "reporting");
+	
+    shn_tabmenu_close();
     if (isset($_GET['test'])){
         require_once($global['approot'] . '/3rd/tcpdf/tcpdf.php');
 		reporting_send_new_report();
 		
     }
-	else if ($control == "") {
-        $control = "shn_reporting_build";
-		shn_tabmenu_open();
-		shn_tabmenu_item("maps", _t("Reporting-Menu| Maps"), "reporting");
-		shn_tabmenu_item("add", _t("Reporting-Menu| Map editor"), "reporting");
-		shn_tabmenu_close();
+	else if (isset($_GET['dar']) == "dar") {
+        $control = "shn_reporting_dar";
     }
+	else if (isset($_GET['gis']) == "gis") {
+        $control = "shn_reporting_gis";
+    }
+	else{
+		$control = "shn_reporting_dar";
+	}
     
     $control();
     
 }
-function shn_reporting_build()
+function shn_reporting_dar()
 {
-    
     global $global;
-    
-    echo "<a href='index.php?stream=text&mod=reporting&act=create'> New report </a>";
-    
-    
+    echo "<a href='index.php?stream=text&mod=reporting&act=dar'> Water and Sanitation Health </a><br/>";  
+    echo "<a href='index.php?stream=text&mod=reporting&act=pa'> Prepareness Assesment </a>";  
+}
+function shn_reporting_gis()
+{
+    global $global;
+    echo "<a href='index.php?stream=text&mod=reporting&act=create'> List of maps </a>";
 }
 function reporting_send_new_report() {
 	
