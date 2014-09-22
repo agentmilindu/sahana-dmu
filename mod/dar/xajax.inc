@@ -29,8 +29,8 @@ array_push($global['xajax_functions'], 'dar_load_food');
 array_push($global['xajax_functions'], 'dar_load_shelter');
 array_push($global['xajax_functions'], 'dar_load_capacity');
 array_push($global['xajax_functions'], 'dar_load_hazard');
-
 array_push($global['xajax_functions'], 'dar_perform_save');
+array_push($global['xajax_functions'], 'dar_show_reports');
 
 
 // adds a message to the log div @ tail
@@ -85,9 +85,9 @@ function dar_show_reports() {
 			";
 
     $q = "
-			SELECT  d.disaster_name, dar.dar_id, dar.date_created, dg.assessor_name
-			FROM disaster AS d, disaster_assessment AS dar, dar_general AS dg
-			WHERE d.disaster_id = dar.disaster_id
+			SELECT  i.name, dar.dar_id, dar.date_created, dg.assessor_name
+			FROM incident AS i, disaster_assessment AS dar, dar_general AS dg
+			WHERE i.incident_id = dar.incident_id
 			AND dar.dar_id = dg.dar_id
 			";
     $result = $global['db']->Execute($q);
@@ -103,9 +103,10 @@ function dar_show_reports() {
     $eo = 0;
     for ( $i = 0; $i < count($reports); $i++ ) {
         $row		=	$reports[$i];
-        $uuid		=	$row['p_uuid'];
-        $name		=	'<b>'.$row['full_name'].'</b>';
-        $disease	=	$row['name'];
+        $date		=	$row['date_created'];
+        $uuid		=	'<b>'.$row['dar_id'].'</b>';
+        $disaster	=	$row['name'];
+        $assessor   =   $row['assessor_name'];
 
         if(($eo % 2) == 0) {
             $evenOddClass = "mainRowEven";
@@ -115,17 +116,17 @@ function dar_show_reports() {
 
         $htmlMain .= "
 				<tr>
-				<td style=\"padding-left: 8px;\" class=\"".$evenOddClass."\">".$name."</td>
-				<td style=\"padding-left: 8px; text-align: center;\" class=\"".$evenOddClass."\"><a href=\"http://{$uuid}\">".$uuid."</a></td>
-				<td style=\"padding-left: 8px; text-align: center;\" class=\"".$evenOddClass."\">".$disease."</td>
-				<td style=\"padding-left: 8px; text-align: center;\" class=\"".$evenOddClass."\"><input class=\"styleTehButton\" type=\"button\" onclick=\"javascript: dar_append_log('Showing monitoring data for patient <b>".$name." </b>...<br>'); dar_show_list_for_patient('".$uuid."');\" value=\"View\"></td>
-				<td style=\"padding-left: 8px; text-align: center;\" class=\"".$evenOddClass."\"><input class=\"styleTehButton\" type=\"button\" onclick=\"javascript: dar_append_log('Adding Monitoring data for patient <b>".$name." </b>...<br>'); dar_add_data('".$uuid."');\" value=\"Add\"></td>
+				<td style=\"padding-left: 8px;\" class=\"".$evenOddClass."\">".$date."</td>
+				<td style=\"padding-left: 8px; text-align: center;\" class=\"".$evenOddClass."\">".$uuid."</td>
+				<td style=\"padding-left: 8px; text-align: center;\" class=\"".$evenOddClass."\">".$disaster."</td>
+				<td style=\"padding-left: 8px; text-align: center;\" class=\"".$evenOddClass."\">".$assessor."</td>
+				<td style=\"padding-left: 8px; text-align: center;\" class=\"".$evenOddClass."\"><input class=\"styleTehButton\" type=\"button\" onclick=\"javascript: dar_append_log('Showing DAR data for report dated <b>".$date." </b>...<br>'); dar_show_list_for_patient('".$uuid."');\" value=\"View\"></td>
 				</tr>
 				";
         $eo++;
     }
     $htmlMain .= "</table>";
-    $pageControlHtml = '<input class="styleTehButton" type="button" onclick="javascript: dar_append_log(\''._t('Canceling Changes...').'<br>\'); setTimeout(\'dar_load_general();\', 250);" value="'._t('Add new Data').'">';
+    $pageControlHtml = '<input class="styleTehButton" type="button" onclick="javascript: dar_append_log(\''._t('Adding new data...').'<br>\'); setTimeout(\'dar_load_general();\', 250);" value="'._t('Add new Data').'">';
     $global['xajax_res']->addAssign('darMain','style.opacity','1.0');
     $global['xajax_res']->addAssign('darMain','innerHTML',$htmlMain);
     $global['xajax_res']->addAssign('darControl','style.opacity','1.0');
@@ -138,37 +139,42 @@ function dar_show_reports() {
 /**
  * Function to load the General Information section
  */
-function dar_load_general()
+function dar_load_general($update = 0)
 {
     global $global;
-    $dar_id = $global['dar_id'];
+    if(!isset($_SESSION['dar']['dar_id'])) {
+        $_SESSION['dar']['dar_id'] = $dar_id = shn_create_uuid('dar');
+    } else {
+        $dar_id = $_SESSION['dar']['dar_id'];
+    }
+
+    $_SESSION['dar']['update'] = $update;
     $htmlLog = "";
     $htmlMain = "";
+
     $_SESSION['dar_current_page'] = "general";
+
     $htmlMain .= shn_form_fopen_return("", null, array('enctype' => 'enctype="multipart/form-data"', 'req_message' => true));
     $htmlMain .= shn_form_fsopen_return("General Information");
-	$htmlMain .= shn_form_select_return(array("Flood" => "Flood", "Drought" => "Drought", "Landslide" => "Landslide", "Tsunami" => "Tsunami","Drought"=>"Drought","Storm"=>"Storm/Cyclone","Other"=>"Other. Please Specify"),
-        "Type of Disaster", "disaster_type");
     $htmlMain .= shn_form_text_return("","other_type");
 	$htmlMain .= shn_form_text_return("Disaster Name(if any)","disasterName");
-	$htmlMain .= shn_form_date_return("Date of Disaster", "reportDate");
-    $htmlMain .= shn_form_select_return(array("colombo"=>"Colombo","kalutara"=>"Kalutara","galle"=>"Galle","gampaha"=>"Gampaha"),
-        "Affected Area", "affected_area");
-   // $htmlMain .= shn_form_select_return(array("GN" => "GN", "MOH" => "MOH", "District" => "District", "Province" => "Province"),
-        //"Affected Area", "area_type");
-    $htmlMain .= shn_form_text_return("Assessor's Name","assessor_name");
+	$htmlMain .= shn_form_date_return("Date of Assessment", "reportDate",null,array('help'=>'Date the report was entered'));
+    $htmlMain .= shn_form_select_return(array("Colombo"=>"Colombo","Kalutara"=>"Kalutara","Galle"=>"Galle","Gampaha"=>"Gampaha"),
+        "Affected Area", "affected_area",null,
+        array('help'=>'Area affected by the disaster. The most accurate geographical area must be selected. The lowest possible area is ‘one GN area’'));
+    $htmlMain .= shn_form_text_return("Assessor's Name","assessor_name",null,array('help'=>'The person who is conducting the disaster assessment. She/He must be assigned by the focal point administrator'));
     $htmlMain .= shn_form_select_return(array("MOH Admin" => "MOH Admin", "FP Admin" => "FP Admin",
         "HO" => "HO"), "Assessor's Designation", "assessor_designation");
-	$htmlMain .= shn_form_date_return("Date of Assessment", "assDate");
-	$htmlMain .= shn_form_date_return("Disaster End Date","endDate");
     $htmlMain .= shn_form_fsclose_return();
     $htmlMain .= shn_form_fclose_return();
+
+
 
     $editControlHtml = '
 
 		<input class="styleTehButton" type="button" onclick="javascript: dar_append_log(\''._t('Canceling Changes...').'<br>\'); setTimeout(\'dar_load_general();\', 250);" value="'._t('Cancel Edit / Close').'">
-		<input class="styleTehButton" type="button" onclick="javascript: dar_append_log(\''._t('Saving Changes...').'<br>\'); dar_perform_save(\''.$dar_id.'\', dar_get_general_data(), \'general\');" value="'._t('Save Changes').'">
-		<input class="styleTehButton" type="button" onclick="javascript: dar_append_log(\''._t('Saving Changes and Closing...<br>').'\'); dar_perform_save(\''.$dar_id.'\', dar_get_general_data(), \'general\'); " value="'._t('Save Changes and Close').'">
+		<input class="styleTehButton" type="button" onclick="javascript: dar_append_log(\''._t('Saving Changes...').'<br>\'); dar_perform_save(\''.$dar_id.'\', dar_get_general_data(), \'general\', '.$update.');" value="'._t('Save Changes').'">
+		<input class="styleTehButton" type="button" onclick="javascript: dar_append_log(\''._t('Saving Changes and Closing...<br>').'\') ;dar_perform_save(\''.$dar_id.'\', dar_get_general_data(), \'general\'); " value="'._t('Save Changes and Close').'">
 	';
     //setTimeout(\'dar_perform_save('.$uuid.', dar_get_data());\', 250)
     $global['xajax_res']->addAssign('darMain','style.opacity','1.0');
@@ -184,13 +190,18 @@ function dar_load_general()
 
 function dar_load_popres() {
     global $global;
-    $dar_id = $global['dar_id'];
+    if(!isset($_SESSION['dar']['dar_id'])) {
+        $_SESSION['dar']['dar_id'] = $dar_id = shn_create_uuid('dar');
+    } else {
+        $dar_id = $_SESSION['dar']['dar_id'];
+    }
+
     $htmlLog = "";
     $htmlMain = "";
     $_SESSION['dar_current_page'] = "popRes";
     $htmlMain .= shn_form_fopen_return("", null, array('enctype' => 'enctype="multipart/form-data"', 'req_message' => true));
     $htmlMain .= shn_form_fsopen_return("Population and Resource Data");
-    $htmlMain.="<div class='long'>";
+    $htmlMain.="<div class='mid'>";
 
 
 
@@ -257,7 +268,7 @@ function dar_load_popres() {
 	$htmlMain .= shn_form_text_return("Female","total_female");
 	$htmlMain .= shn_form_text_return("Pregnant","total_pregnant");
 	$htmlMain .= shn_form_text_return("Children","total_children");
-	$htmlMain .= shn_form_text_return("Children between 1-5 yrs","total_1-5_Children");
+	$htmlMain .= shn_form_text_return("Children between 1-5 yrs","total_1to5_children");
 	$htmlMain .= shn_form_text_return("Infants","total_infants");
 	$htmlMain .= shn_form_text_return("Total","total_full");
 	$htmlMain .= shn_form_text_return("Total number of families","total_families");
@@ -292,54 +303,59 @@ function dar_load_popres() {
     $global['xajax_res']->addScript("setTimeout('e = document.getElementById(\'darLog\'); e.scrollTop = e.scrollHeight+1000;', 500);");
     $global['xajax_res']->addScript("initCalendar();");
     $global['xajax_res']->addScript("limit();");
+    $global['xajax_res']->addScript("numericOnly();");
     return $global['xajax_res']->getXML();
 }
 
 function dar_load_wash() {
     global $global;
-    $dar_id = $global['dar_id'];
+    if(!isset($_SESSION['dar']['dar_id'])) {
+        $_SESSION['dar']['dar_id'] = $dar_id = shn_create_uuid('dar');
+    } else {
+        $dar_id = $_SESSION['dar']['dar_id'];
+    }
     $htmlLog = "";
     $htmlMain = "";
     $_SESSION['dar_current_page'] = "wash";
+    $htmlMain .='<div class="washForms">';
     $htmlMain .= shn_form_fopen_return("", null, array('enctype' => 'enctype="multipart/form-data"', 'req_message' => true));
     $htmlMain .= shn_form_fsopen_return("Water");
+
     $htmlMain .= shn_form_select_return(array("1" => "Pipe-borne", "1" => "Open Well", "2" => "Reservoir"
     , "3" => "Hand-pumped well", "4" => "Other"),"Pre-disaster water source", "pre_disaster_water_source");
     $htmlMain .= shn_form_select_return(array("1" => "Similar to pre-disaster", "2" => "Greater than 75%",
         "3" => "Greater than 50%", "4" => "Less than 50%", "5" => "Less than 25%",
         "6" => "All damaged"),"Post-disaster water status", "post_disaster_water_status");
-    $htmlMain .= shn_form_fsopen_return("Number of water sources");
-    $htmlMain .= shn_form_text_return("Within 500m", "water_sources_within_range",null,array());
-    $htmlMain .= shn_form_text_return("Further than 500m", "water_sources_further_than_range");
-    $htmlMain .= shn_form_fsclose_return();
-    $htmlMain .= shn_form_select_return(array("1" => "Yes", "0" => "No"),
+    $htmlMain .= shn_form_select_return(array('1'=>'Less than 30min','2'=>'More than 30min','3'=>'Difficult to assess'),
+        "Waiting time at the main water source",'wait_time_water');
+    $htmlMain .= shn_form_text_return("Water sources within 500m of affected area", "water_sources_within_range",null,array('help'=>''));
+    $htmlMain .= shn_form_select_return(array("1" => "Yes", "0" => "No","3"=>"Difficult to asses"),
         "Requirement of water treatment", "water_treatment_required");
-    $htmlMain .= shn_form_text_return("Estimated Requirement of Water/day", "estimated_requirement_per_day");
-
-    $htmlMain .= shn_form_fsopen_return("Estimated waiting time at a single water source");
-    $htmlMain .= shn_form_text_return("Pipe-borne", "waiting_time_pipe_borne", null,
-        array('help'=>'Estimated waiting time = Total water requirement  of the affected population / flow dare * available number within 500m => should be less than 30min'));
-    $htmlMain .= shn_form_text_return("Open Well", "waiting_time_open_well", null,
-        array('help'=>'Estimated waiting time = Total water requirement  of the affected population / flow dare * available number within 500m => should be less than 30min'));
-    $htmlMain .= shn_form_text_return("Hand-pump", "waiting_time_hand_pump", null,
-        array('help'=>'Estimated waiting time = Total water requirement  of the affected population / flow dare * available number within 500m => should be less than 30min'));
+    $htmlMain .= shn_form_text_return("Est. requirement of water per day<br>(for affected population)", "estimated_requirement_per_day"); //number field
     $htmlMain .= shn_form_fsclose_return();
-    $htmlMain .= shn_form_select_return(array("Yes" => "Yes", "No" => "No"),
-        "Requirement basic hygiene training", "hygiene_training_required");
+
     $htmlMain .= shn_form_fsclose_return();
 
     $htmlMain .= shn_form_fsopen_return("Toilets");
-    $htmlMain .= shn_form_text_return("Number of appropriately designed toilets", "number_of_toilets");
-    $htmlMain .= shn_form_text_return("Required Number", "required_toilets_number", null,
-        array("help"=>"On basis of one toilet per 20 people", "disabled"=>true));
-    $htmlMain .= shn_form_text_return("Deficit", "toilet_deficit",null,array("help"=>"Required - Available","disabled"=>true));
+    $htmlMain .= shn_form_select_return(array("1" => "Yes", "0" => "No","2"=>"Difficult to assess"),
+        "Requirement basic hygiene training", "hygiene_training_required");
+    $htmlMain .='<br>';
+    $htmlMain .= shn_form_select_return(array("1" => "Yes", "0" => "No","2"=>"Difficult to assess"),"Requirement for new toilets","toilet_requirement");
+    $htmlMain .='<br><fieldset><legend>If Yes</legend><label>Required Number(1 toilet per 20 people)</label>
+                 <input type="text" id="toilet_number" disabled></fieldset>';
     $htmlMain .= shn_form_fsclose_return();
 
     $htmlMain .= shn_form_fsopen_return("Tendency for vector-borne diseases");
-    $htmlMain .= shn_form_text_return("Type of vector", "vector_type");
-    $htmlMain .= shn_form_text_return("Name of disease", "vector_disease");
+    $htmlMain .= shn_form_select_return(array("1" => "Yes", "0" => "No","3"=>"Difficult to asses"),"", "vector_type");
+    $htmlMain .= '<br><fieldset><legend>If Yes</legend><select id="diseases" disabled>
+                <option value="dengue">Dengue</option>
+                <option value="leptospirosis ">Leptospirosis</option>
+                <option value="other">Other</option>
+                </select>
+                <input type="text" id="other_disease" disabled>
+                </fieldset>';
     $htmlMain .= shn_form_fsclose_return();
-
+    $htmlMain .='</div>';
     $editControlHtml = '
 
 		<input class="styleTehButton" type="button" onclick="javascript: dar_append_log(\''._t('Canceling Changes...').'<br>\'); setTimeout(\'dar_load_wash();\', 250);" value="'._t('Cancel Edit / Close').'">
@@ -352,6 +368,7 @@ function dar_load_wash() {
     $global['xajax_res']->addAppend('darLog','innerHTML',$htmlLog);
     $global['xajax_res']->addScript("setTimeout('e = document.getElementById(\'darLog\'); e.scrollTop = e.scrollHeight+1000;', 500);");
     $global['xajax_res']->addScript("initCalendar();");
+    $global['xajax_res']->addScript("vector_yes();");
     return $global['xajax_res']->getXML();
 
 
@@ -359,7 +376,11 @@ function dar_load_wash() {
 
 function dar_load_food() {
     global $global;
-    $dar_id = $global['dar_id'];
+    if(!isset($_SESSION['dar']['dar_id'])) {
+        $_SESSION['dar']['dar_id'] = $dar_id = shn_create_uuid('dar');
+    } else {
+        $dar_id = $_SESSION['dar']['dar_id'];
+    }
     $htmlLog = "";
     $htmlMain = "";
     $_SESSION['dar_current_page'] = "food";
@@ -406,7 +427,11 @@ function dar_load_food() {
 
 function dar_load_shelter() {
     global $global;
-    $dar_id = $global['dar_id'];
+    if(!isset($_SESSION['dar']['dar_id'])) {
+        $_SESSION['dar']['dar_id'] = $dar_id = shn_create_uuid('dar');
+    } else {
+        $dar_id = $_SESSION['dar']['dar_id'];
+    }
     $htmlLog = "";
     $htmlMain = "";
     $_SESSION['dar_current_page'] = "shelter";
@@ -427,19 +452,19 @@ function dar_load_shelter() {
     $htmlMain .= shn_form_fsclose_return();
 
     $htmlMain .= shn_form_fsopen_return("Shelter estimates");
-    $htmlMain .= shn_form_text_return("Estimated Number requiring shelter", "estimated_number_requiring_shelter");
+    $htmlMain .= shn_form_text_return("Est Number requiring shelter", "estimated_number_requiring_shelter");
     $htmlMain .= shn_form_text_return("Required area for shelter", "required_area_for_shelter",null,array("help"=>"covered living area calculation based on 3.5m&#178"));
     $htmlMain .= shn_form_fsclose_return();
 
     $htmlMain .= shn_form_fsopen_return("Temporary shelter availability in the area");
     $htmlMain .= '<div class="checkBox"><form>
-        <label>Schools</label><input type="checkbox" id="schools">
+        <label>Schools</label><input type="checkbox" id="Schools">
         <input type="text" id="schools_list" disabled><br>
-        <label>Temples/Religious Places</label><input type="checkbox" id="temples">
+        <label>Temples/Religious Places</label><input type="checkbox" id="Temples &amp; Religious Places">
         <input type="text" id="temples_list" disabled><br>
-        <label>Government offices</label><input type="checkbox" id="gOffices">
+        <label>Government offices</label><input type="checkbox" id="Government Offices">
         <input type="text" id="gOffices_list" disabled><br>
-        <label>Other</label><input type="checkbox" id="other">
+        <label>Other</label><input type="checkbox" id="Other">
         <input type="text" id="other_list" disabled>
         </form></div>';
     $htmlMain .= shn_form_fsclose_return();
@@ -464,28 +489,26 @@ function dar_perform_save($dar_id, $rj, $page, $update = false) {
 
     global $global;
 
-    $r = json_decode($rj);
+    $r = json_decode($rj, true);
 
     if($page == "general"){
 
+        $disaster_type              = mysql_real_escape_string($r['disaster_type']);
         $reportDate                 = mysql_real_escape_string($r['reportDate']);
         $affected_area              = mysql_real_escape_string($r['affected_area']);
-        $focal_point_name           = mysql_real_escape_string($r['focal_point_name']);
         $area_type                  = mysql_real_escape_string($r['area_type']);
         $assessor_name              = mysql_real_escape_string($r['assessor_name']);
         $assessor_designation       = mysql_real_escape_string($r['assessor_designation']);
-        $focal_point_coordinator    = mysql_real_escape_string($r['focal_point_coordinator']);
 
         if ( $update ) {
             $q = "
             UPDATE dar_general
-            SET reportDate              ='".$reportDate."',
+            SET
+                reportDate              ='".$reportDate."',
                 affected_area           ='".$affected_area."',
-                focal_point_name        ='".$focal_point_name."',
                 area_type               ='".$area_type."',
                 assessor_name           ='".$assessor_name."',
-                assessor_designation    ='".$assessor_designation."',
-                focal_point_coordinator ='".$focal_point_coordinator."'
+                assessor_designation    ='".$assessor_designation."'
             WHERE dar_id='".$dar_id."'
              ";
         }
@@ -495,13 +518,10 @@ function dar_perform_save($dar_id, $rj, $page, $update = false) {
             VALUES('".$dar_id."',
                    '".$reportDate."',
                    '".$affected_area."',
-                   '".$focal_point_name."',
                    '".$area_type."',
                    '".$assessor_name."',
-                   '".$assessor_designation."',
-                   '".$focal_point_coordinator."'
-
-             )";
+                   '".$assessor_designation."'
+            )";
         }
 
         $result = $global['db']->Execute($q);

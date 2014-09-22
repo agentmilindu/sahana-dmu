@@ -12,10 +12,72 @@
  */
 
 function initCalendar() {
-    $("#assDate").datepicker({ dateFormat: 'yy-mm-dd' ,maxDate: 0});
+    $("#reportDate").datepicker({ dateFormat: 'yy-mm-dd' ,maxDate: 0});
     $("#disasterDate").datepicker({ dateFormat: 'yy-mm-dd',maxDate: 0 });
 	$("#endDate").datepicker({ dateFormat: 'yy-mm-dd',maxDate: 0 });
 }
+
+function disableText(field,e) {
+    //called when key is pressed in textbox
+        //if the letter is not digit then display error and don't type anything
+        if (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57)) {
+            //display error message
+            e.preventDefault();
+            return false;
+        }
+}
+
+function numericOnly(){
+    //$("#male_injured").keypress(function (e){disableText("#male_injured",e)});
+    $("#male_injured").keypress(function(e){disableText("#male_injured",e)});
+    $("#female_injured").keypress(function(e){disableText("#female_injured",e)});
+    $("#pregnant_female_injured").keypress(function(e){disableText("#pregnant_female_injured",e)});
+    $("#children_injured").keypress(function(e){disableText("#children_injured",e)});
+    $("#young_children_injured").keypress(function(e){disableText("#young_children_injured",e)});
+    $("#infants_injured").keypress(function(e){disableText("#infants_injured",e)});
+    $("#total_injured").keypress(function(e){disableText("#total_injured",e)});
+    $("#male_displaced").keypress(function(e){disableText("#male_displaced",e)});
+    $("#female_displaced").keypress(function(e){disableText("#female_displaced",e)});
+    $("#pregnant_female_displaced").keypress(function(e){disableText("#pregnant_female_displaced",e)});
+    $("#children_displaced").keypress(function(e){disableText("#children_displaced",e)});
+    $("#young_children_displaced").keypress(function(e){disableText("#young_children_displaced",e)});
+    $("#infants_displaced").keypress(function(e){disableText("#infants_displaced",e)});
+    $("#total_displaced").keypress(function(e){disableText("#total_displaced",e)});
+    $("#male_missing").keypress(function(e){disableText("#male_missing",e)});
+    $("#female_missing").keypress(function(e){disableText("#female_missing",e)});
+    $("#pregnant_female_missing").keypress(function(e){disableText("#pregnant_female_missing",e)});
+    $("#children_missing").keypress(function(e){disableText("#children_displaced",e)});
+    $("#young_children_missing").keypress(function(e){disableText("#young_children_missing",e)});
+    $("#infants_missing").keypress(function(e){disableText("#infants_missing",e)});
+    $("#total_missing").keypress(function(e){disableText("#total_missing",e)});
+    $("#res_diseases").keypress(function(e){disableText("#res_diseases",e)});
+    $("#dysentery").keypress(function(e){disableText("#dysentery",e)});
+    $("#hepatitis").keypress(function(e){disableText("#hepatitis",e)});
+    $("#dengue").keypress(function(e){disableText("#dengue",e)});
+    $("#malaria").keypress(function(e){disableText("#malaria",e)});
+    $("#measles").keypress(function(e){disableText("#measles",e)});
+    $("#meningitis").keypress(function(e){disableText("#meningitis",e)});
+    $("#chikenpox").keypress(function(e){disableText("#chikenpox",e)});
+    $("#total_deceased").keypress(function(e){disableText("#total_deceased",e)});
+    $("#total_male").keypress(function(e){disableText("#total_male",e)});
+    $("#total_female").keypress(function(e){disableText("#total_female",e)});
+    $("#total_pregnant").keypress(function(e){disableText("#total_female",e)});
+    $("#total_children").keypress(function(e){disableText("#total_children",e)});
+    $("#total_1to5_children").keypress(function(e){disableText("#total_1to5_children",e)});
+    $("#total_infants").keypress(function(e){disableText("#total_infants",e)});
+    $("#total_full").keypress(function(e){disableText("#total_full",e)});
+    $("#total_families").keypress(function(e){disableText("#total_families",e)});
+    $("#fp_hi").keypress(function(e){disableText("#fp_hi",e)});
+    $("#fp_dh").keypress(function(e){disableText("#fp_dh",e)});
+    $("#fp_if").keypress(function(e){disableText("#fp_if",e)});
+    $("#fp_bs").keypress(function(e){disableText("#fp_bs",e)});
+    $("#ae_hi").keypress(function(e){disableText("#ae_hi",e)});
+    $("#ae_doc").keypress(function(e){disableText("#ae_doc",e)});
+    $("#tenKm_hi").keypress(function(e){disableText("#tenKm_hi",e)});
+    $("#ae_bs").keypress(function(e){disableText("#ae_bs",e)});
+
+}
+
 
 function tempCheckBox(){
     $(":checkbox").click(function(){
@@ -105,6 +167,31 @@ function dis(){
     }
 }
 
+function vector_yes(){
+    $("select").change(function(){
+        if($("#vector_type").val()=="1"){
+            $('#diseases').prop('disabled', false);
+            if($("#diseases").val()=="other"){
+                $('#other_disease').prop('disabled', false);
+            }
+            else{
+                $('#other_disease').prop('disabled', true);
+            }
+        }
+        else{
+            $('#diseases').prop('disabled', true);
+            $('#other_disease').prop('disabled', true);
+        }
+        if($("#toilet_requirement").val()==1){
+            $('#toilet_number').prop('disabled', false);
+        }
+        else{
+            $('#toilet_number').prop('disabled', true);
+        }
+
+    });
+}
+
 
 function other(){
     $("#other_type").hide();
@@ -125,11 +212,9 @@ function dar_get_general_data() {
     var r = new Object();
     r.reportDate                     = $("#reportDate").val();
     r.affected_area                  = $("#affected_area").val();
-    //r.focal_point_name               = $("#focal_point_name").val();
     r.area_type                      = $("#area_type").val();
     r.assessor_name                  = $("#assessor_name").val();
     r.assessor_designation           = $("#assessor_designation").val();
-    //r.focal_point_coordinator        = $("#focal_point_coordinator").val();
 
 
     var rj = JSON.stringify(r);
@@ -172,6 +257,22 @@ function dar_get_popres_data() {
     r.meningitis                     = $("#meningitis").val();
     r.chikenpox                      = $("#chikenpox").val();
     r.total_deceased                 = $("#total_deceased").val();
+    r.total_male                     = $("#total_male").val();
+    r.total_female                   = $("#total_female").val();
+    r.total_pregnant                 = $("#total_pregnant").val();
+    r.total_children                 = $("#total_children").val();
+    r.total_1to5_children            = $("#total_1to5_children").val();
+    r.total_infants                  = $("#total_infants").val();
+    r.total_full                     = $("#total_full").val();
+    r.total_families                 = $("#total_families").val();
+    r.fp_hi                          = $("#fp_hi").val();
+    r.fp_dh                          = $("#fp_dh").val();
+    r.fp_if                          = $("#fp_if").val();
+    r.fp_bs                          = $("#fp_bs").val();
+    r.ae_hi                          = $("#ae_hi").val();
+    r.ae_doc                         = $("#ae_doc").val();
+    r.tenKm_hi                       = $("#tenKm_hi").val();
+    r.ae_bs                          = $("#ae_bs").val();
 
 
 

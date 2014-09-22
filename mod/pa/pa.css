@@ -3,17 +3,26 @@
     width: 1em !important;
 }
 
-#pa, #drill
-{
+#pa, #drill{
     text-align: left !important;
     width: 4em !important;
 }
 
-#pa_date, #drill_date
-{
+#pa_date, #drill_date{
     margin: 3px;
 }
- #emp
- {
+
+#emp{
      text-align: left;
- }
+}
+
+#t_landslide, #t_tsunami, #t_drought, #t_cyclones, #t_flood{
+    text-align: center !important;
+}
+
+fieldset{
+    height: none !important;
+    min-height: none !important;
+    min-width: none !important;
+}
+
