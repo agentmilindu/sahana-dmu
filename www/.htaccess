@@ -20,7 +20,7 @@ RewriteBase /sahana-dmu/www/
 RewriteCond %{REQUEST_FILENAME} -d [OR]
 RewriteCond %{REQUEST_FILENAME} -f
 
-RewriteRule .* - [S=43]
+RewriteRule .* - [S=44]
 
 ##### matches /person.XXXXX for the person uuid's as urls
 RewriteRule ^(person.[0-9]+)$ ?mod=eap&val=$1 [L]
@@ -67,6 +67,7 @@ RewriteRule ^(tp|triagepic)$                   $2?mod=tp [QSA]
 RewriteRule ^(pref|settings)$                  $2?mod=pref [QSA]
 RewriteRule ^(xst|xmlstreamer)$                $2?mod=xst [QSA]
 RewriteRule ^(gis)$                            $2?mod=gis [QSA]
+RewriteRule ^(cms)$                            $2?mod=cms [QSA]
 RewriteRule ^(pa|preparedness)$                $2?mod=pa [QSA]
 RewriteRule ^(rs)$                             $2?mod=rs [QSA]
 RewriteRule ^(reporting)$                      $2?mod=reporting [QSA]
